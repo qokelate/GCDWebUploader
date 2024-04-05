@@ -388,7 +388,7 @@ static void load_bundle()
       return [GCDWebServerDataResponse responseWithHTMLTemplate:[siteBundle pathForResource:@"index" ofType:@"html"]
                                                       variables:@{
                                                                   @"device": device,
-                                                                  @"title": title,
+                                                                  @"title": [NSString stringWithFormat:@"%@ - %@", [UIDevice currentDevice].name, title],
                                                                   @"header": header,
                                                                   @"prologue": prologue,
                                                                   @"epilogue": epilogue,
