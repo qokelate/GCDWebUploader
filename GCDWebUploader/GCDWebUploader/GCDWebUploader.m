@@ -285,7 +285,7 @@
 
 
 static NSString *GCDWebUploader_bundle_root = nil;
-extern NSDictionary *GCDWebUploader_bundle;
+extern NSDictionary *GCDWebUploader_bundle_content(void);
 static void load_bundle()
 {
 #if defined(DEBUG)||defined(_DEBUG)
@@ -298,6 +298,7 @@ static void load_bundle()
     
     if (GCDWebUploader_bundle_root.length) return;
     
+    NSDictionary *GCDWebUploader_bundle = GCDWebUploader_bundle_content();
     NSString *bundle = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
     [GCDWebUploader_bundle enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *obj, BOOL * _Nonnull stop) {
         NSString *f = [NSString stringWithFormat:@"%@/GCDWebUploaderFiles/%@", bundle, key];
