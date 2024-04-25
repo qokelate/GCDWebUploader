@@ -1,0 +1,9 @@
+Package: none
+Name: GCDWebUploader
+Version: 0.0.1
+Architecture: iphoneos-arm64
+Description: GCDWebUploader tweak!
+Maintainer: none
+Author: none
+Section: Tweaks
+
