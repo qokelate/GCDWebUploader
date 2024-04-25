@@ -14,6 +14,7 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = GCDWebServer
 
 $(TWEAK_NAME)_FILES = \
+../GCDWebUploader/loader.m \
 ../GCDWebUploader/WebServer.m \
 ../GCDWebUploader/GCDWebServer/Core/GCDWebServerResponse.m \
 ../GCDWebUploader/GCDWebServer/Core/GCDWebServerRequest.m \
