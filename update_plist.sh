@@ -24,16 +24,15 @@ done
 '/usr/libexec/PlistBuddy' -x -c "add ':NSBonjourServices:0' string '_lnp._tcp.'" "${plist}"
 '/usr/libexec/PlistBuddy' -x -c "add ':NSBonjourServices:0' string '_http._tcp'" "${plist}"
 
-exit
 
 '/usr/libexec/PlistBuddy' -x -c "delete ':NSAppTransportSecurity' dict" "${plist}" || true
 '/usr/libexec/PlistBuddy' -x -c "add ':NSAppTransportSecurity' dict" "${plist}"
 '/usr/libexec/PlistBuddy' -x -c "add ':NSAppTransportSecurity:NSAllowsArbitraryLoads' bool 'true'" "${plist}"
 
 
-
 '/usr/libexec/PlistBuddy' -x -c "add ':NSLocalNetworkUsageDescription' string 'Privacy - Local Network Usage Description'" "${plist}" || true
 '/usr/libexec/PlistBuddy' -x -c "add ':UIFileSharingEnabled' bool 'true'" "${plist}" || true
+'/usr/libexec/PlistBuddy' -x -c "set ':UIFileSharingEnabled' 'true'" "${plist}"
 
 exit
 
