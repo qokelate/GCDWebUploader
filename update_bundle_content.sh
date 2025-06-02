@@ -21,4 +21,6 @@ done
 
 echo '};}'>>"$outfile"
 
+echo "$outfile"
+
 exit

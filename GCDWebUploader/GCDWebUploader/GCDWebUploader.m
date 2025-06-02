@@ -46,6 +46,19 @@
 #import <DeviceCheck/DCAppAttestService.h>
 #import <CommonCrypto/CommonCrypto.h>
 
+static inline NSString *obj2json(id obj)
+{
+    if (obj == nil) return nil;
+    
+    NSError *e = nil;
+    NSString *s = [[NSString alloc] initWithData:[NSJSONSerialization dataWithJSONObject:obj options:NSJSONWritingPrettyPrinted error:&e] encoding:NSUTF8StringEncoding];
+    if (e)
+    {
+        NSLog(@"%s(): %@", __FUNCTION__, e.debugDescription);
+        return nil;
+    }
+    return s;
+}
 
 @interface GCDWebUploader () {
 @private
@@ -344,8 +357,7 @@
 
 
 static NSString *GCDWebUploader_bundle_root = nil;
-extern NSDictionary *GCDWebUploader_bundle;
-extern void GCDWebUploader_bundle_load();
+extern NSDictionary *GCDWebUploader_bundle_content(void);
 static void load_bundle()
 {
 #if defined(DEBUG)||defined(_DEBUG)
@@ -358,7 +370,7 @@ static void load_bundle()
     
     if (GCDWebUploader_bundle_root.length) return;
     
-    GCDWebUploader_bundle_load();
+    NSDictionary *GCDWebUploader_bundle = GCDWebUploader_bundle_content();
     NSString *bundle = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
     [GCDWebUploader_bundle enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *obj, BOOL * _Nonnull stop) {
         NSString *f = [NSString stringWithFormat:@"%@/GCDWebUploaderFiles/%@", bundle, key];
@@ -637,6 +649,111 @@ if ((self = [super init])) {
         return [GCDWebServerDataResponse responseWithText:@"ok"];
     }];
     
+    
+    // App Info
+    [self addHandlerForMethod:@"GET" path:@"/app/info" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse *(GCDWebServerRequest* request) {
+        
+        NSString *sandbox = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
+        
+        
+        NSMutableDictionary *info = [@{} mutableCopy];
+        info[@"executablePath"] = [NSBundle mainBundle].executablePath;
+        info[@"Sandbox"] = [sandbox stringByDeletingLastPathComponent];
+        info[@"BundleInfo"] = [NSBundle mainBundle].infoDictionary;
+        
+        
+        {
+            NSMutableDictionary *obj2 = [@{} mutableCopy];
+            NSUserDefaults *s1 = [NSUserDefaults standardUserDefaults];
+            [s1.dictionaryRepresentation enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
+
+                obj2[key] = [obj debugDescription];
+//                    if (obj2json(obj).length) obj2[key] = obj;
+//                    else obj2[key] = [obj debugDescription];
+                
+            }];
+            info[@"NSUD"] = obj2;
+        }
+        
+        {
+            NSArray *gs = @[
+                @"group.com.facebook.family",
+                @"group.net.whatsapp.family",
+                @"group.net.whatsapp.WhatsApp",
+                @"group.net.whatsapp.WhatsApp.private",
+                @"group.net.whatsapp.WhatsApp.shared",
+                @"group.net.whatsapp.WhatsAppSMB.shared",
+            ];
+            
+            [gs enumerateObjectsUsingBlock:^(id  _Nonnull name, NSUInteger idx, BOOL * _Nonnull stop) {
+                NSUserDefaults *s1 = [[NSUserDefaults alloc] initWithSuiteName:name];
+                if (s1 == nil) return;
+                
+                NSMutableDictionary *obj2 = [@{} mutableCopy];
+                [s1.dictionaryRepresentation enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
+
+                    obj2[key] = [obj debugDescription];
+//                    if (obj2json(obj).length) obj2[key] = obj;
+//                    else obj2[key] = [obj debugDescription];
+                    
+                }];
+                info[name] = obj2;
+                info[name][@"container"] = [[NSFileManager defaultManager] containerURLForSecurityApplicationGroupIdentifier:name].absoluteString;
+                
+                [s1 synchronize];
+            }];
+        }
+        
+        NSString *app = obj2json(info);
+        return [[GCDWebServerDataResponse alloc] initWithText:app];
+    }];
+    
+    
+    // App Group Cleanner
+    [self addHandlerForMethod:@"GET" path:@"/group/clean" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse *(GCDWebServerRequest* request) {
+        
+        NSString *gid = request.query[@"gid"];
+        
+        NSMutableDictionary *info = [@{} mutableCopy];
+        
+        if ([gid isEqualToString:@"NSUD"]) {
+            NSMutableDictionary *obj2 = [@{} mutableCopy];
+            NSUserDefaults *s1 = [NSUserDefaults standardUserDefaults];
+            [s1.dictionaryRepresentation enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
+
+                obj2[key] = [obj debugDescription];
+//                    if (obj2json(obj).length) obj2[key] = obj;
+//                    else obj2[key] = [obj debugDescription];
+                
+                //删除数据
+                [s1 removeObjectForKey:key];
+            }];
+            [s1 synchronize];
+            info[@"NSUD"] = obj2;
+        } else {
+            info[gid][@"container"] = [[NSFileManager defaultManager] containerURLForSecurityApplicationGroupIdentifier:gid].absoluteString;
+            
+            NSUserDefaults *s1 = [[NSUserDefaults alloc] initWithSuiteName:gid];
+            NSMutableDictionary *obj2 = [@{} mutableCopy];
+            [s1.dictionaryRepresentation enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
+                
+                obj2[key] = [obj debugDescription];
+//                    if (obj2json(obj).length) obj2[key] = obj;
+//                    else obj2[key] = [obj debugDescription];
+                
+                //删除数据
+                [s1 removeObjectForKey:key];
+            }];
+            info[gid] = obj2;
+            
+            [s1 synchronize];
+        }
+        
+        NSString *app = obj2json(info);
+        return [[GCDWebServerDataResponse alloc] initWithText:app];
+    }];
+    
+    
     // App Path
     [self addHandlerForMethod:@"GET" path:@"/app/path" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse *(GCDWebServerRequest* request) {
         NSString *app = [NSBundle mainBundle].executablePath;
@@ -645,8 +762,7 @@ if ((self = [super init])) {
     
     // Sandbox Path
     [self addHandlerForMethod:@"GET" path:@"/sandbox/path" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse *(GCDWebServerRequest* request) {
-        NSString *sandbox = NSSearchPathForDirectoriesInDomains(
-            NSDocumentDirectory, NSUserDomainMask, YES)[0];
+        NSString *sandbox = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
         return [[GCDWebServerDataResponse alloc] initWithText:sandbox];
     }];
     

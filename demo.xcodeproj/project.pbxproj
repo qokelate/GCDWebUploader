@@ -189,8 +189,8 @@
 		3FAF1C462BBF9C02009194BF /* GCDWebUploader */ = {
 			isa = PBXGroup;
 			children = (
-				3FAF1C482BBF9C02009194BF /* GCDWebUploader.h */,
 				3FAF1C492BBF9C02009194BF /* GCDWebUploader.m */,
+				3FAF1C482BBF9C02009194BF /* GCDWebUploader.h */,
 				3FAF1C4A2BBF9C02009194BF /* GCDWebUploader_bundle.m */,
 			);
 			path = GCDWebUploader;
