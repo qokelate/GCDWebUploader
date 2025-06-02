@@ -47,6 +47,11 @@
   text-align: center;
 }
 
+.column-copy {
+    width: 40px;
+    text-align: center;
+  }
+
 .column-delete {
   width: 40px;
   text-align: center;

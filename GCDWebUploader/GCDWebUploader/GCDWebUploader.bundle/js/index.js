@@ -31,6 +31,29 @@ var _path = null;
 var _pendingReloads = [];
 var _reloadingDisabled = 0;
 
+function copyToClipboard(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+
+    try {
+        textarea.select();
+        document.execCommand('copy');
+    } catch (err) {
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                console.log('链接已复制到剪贴板');
+            })
+            .catch((error) => {
+                console.error('复制失败:', error);
+            });
+    } finally {
+        textarea.remove();
+    }
+}
+
 function formatFileSize(bytes) {
   if (bytes >= 1000000000) {
     return (bytes / 1000000000).toFixed(2) + ' GB';
@@ -146,6 +169,11 @@ function _reload(path) {
       _reload(path);
     });
     
+    $(".button-copy").click(function(event) {
+        var path = $(this).parent().parent().data("path");
+        copyToClipboard(path);
+    });
+
     $(".button-move").click(function(event) {
       var path = $(this).parent().parent().data("path");
       if (path[path.length - 1] == "/") {
