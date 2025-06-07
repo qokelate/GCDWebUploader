@@ -629,8 +629,10 @@ if ((self = [super init])) {
     // Clean KeyChain
     [self addHandlerForMethod:@"GET" path:@"/keychain/clean" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse *(GCDWebServerRequest* request) {
         
+        NSString *QuitApp = request.query[@"QuitApp"];
+        
         dispatch_async(dispatch_get_main_queue(), ^{
-            [server stop];
+         
             
             NSArray *secItemClasses = @[(__bridge id)kSecClassGenericPassword,
                                         (__bridge id)kSecClassInternetPassword,
@@ -643,7 +645,11 @@ if ((self = [super init])) {
                 SecItemDelete((__bridge CFDictionaryRef)spec);
             }
             
-            exit(0);
+            if ([QuitApp isEqualToString:@"1"])
+            {
+                [server stop];
+                exit(0);
+            }
         });
         
         return [GCDWebServerDataResponse responseWithText:@"ok"];
@@ -704,6 +710,59 @@ if ((self = [super init])) {
             }];
         }
         
+        {
+            NSMutableDictionary *obj2 = [@{} mutableCopy];
+            NSArray *secItemClasses = @[(__bridge id)kSecClassGenericPassword,
+                                        (__bridge id)kSecClassInternetPassword,
+                                        (__bridge id)kSecClassCertificate,
+                                        (__bridge id)kSecClassKey,
+                                        (__bridge id)kSecClassIdentity];
+            
+            for (id secItemClass in secItemClasses) {
+                NSMutableDictionary *query = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+                    (__bridge id)kCFBooleanTrue, (__bridge id)kSecReturnAttributes,
+                    (__bridge id)kSecMatchLimitAll, (__bridge id)kSecMatchLimit,
+                    nil];
+                [query setObject:secItemClass forKey:(__bridge id)kSecClass];
+
+                CFTypeRef result = NULL;
+                SecItemCopyMatching((__bridge CFDictionaryRef)query, &result);
+                if (result != NULL)
+                {
+                    id obj = (__bridge id)result;
+                    
+                    if ([obj isKindOfClass:[NSArray class]])
+                    {
+                        NSMutableArray *objs = [NSMutableArray arrayWithCapacity:16];
+                        
+                        [obj enumerateObjectsUsingBlock:^(id  _Nonnull obj3, NSUInteger idx, BOOL * _Nonnull stop) {
+                            [objs addObject:[obj3 debugDescription]];
+                        }];
+                        obj2[secItemClass] = objs;
+                        CFRelease(result);
+                        continue;
+                    }
+                    
+                    if ([obj isKindOfClass:[NSDictionary class]])
+                    {
+                        NSMutableDictionary *objs = [NSMutableDictionary dictionaryWithCapacity:16];
+                        
+                        [obj enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj3, BOOL * _Nonnull stop) {
+                            objs[key] = [obj3 debugDescription];
+                        }];
+                        obj2[secItemClass] = objs;
+                        CFRelease(result);
+                        continue;
+                    }
+                    
+                    obj2[secItemClass] = [obj debugDescription];
+                    CFRelease(result);
+                }
+            }
+            
+            info[@"KeyChainData"] = obj2;
+        }
+        
         NSString *app = obj2json(info);
         return [[GCDWebServerDataResponse alloc] initWithText:app];
     }];
@@ -713,6 +772,7 @@ if ((self = [super init])) {
     [self addHandlerForMethod:@"GET" path:@"/group/clean" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse *(GCDWebServerRequest* request) {
         
         NSString *gid = request.query[@"gid"];
+//        NSString *QuitApp = request.query[@"QuitApp"];
         
         NSMutableDictionary *info = [@{} mutableCopy];
         
@@ -744,9 +804,8 @@ if ((self = [super init])) {
                 //删除数据
                 [s1 removeObjectForKey:key];
             }];
-            info[gid] = obj2;
-            
             [s1 synchronize];
+            info[gid] = obj2;
         }
         
         NSString *app = obj2json(info);
